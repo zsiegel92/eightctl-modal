@@ -1,85 +1,46 @@
-import modal
-import fastapi
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from __future__ import annotations
 
+from modal import (
+    App,
+    Image,
+    Secret,
+    Volume,
+    asgi_app,
+    concurrent,
+)
+
+from eightctl_web.app import create_app
 
 image = (
-    modal.Image.debian_slim()
+    Image.debian_slim()
+    .add_local_dir("py-eightctl", remote_path="/.uv/py-eightctl", copy=True)
+    .add_local_dir("src/eightctl_web", remote_path="/root/eightctl_web", copy=True)
     .uv_sync()
-    .env({"CONFIG_PATH_ENV_VAR": "/data/config.json"})
+    .env({"PY_EIGHTCTL_CONFIG_PATH": "/data/py-eightctl-config.json"})
 )
 
-app = modal.App("eightctl-web", secrets=[
-    modal.Secret.from_name("eightsleep-web"),
-])
-volume = modal.Volume.from_name(
-    "eightctl-web-data",
-    create_if_missing=True,
+app = App(
+    name="eightctl-web",
+    image=image,
+    secrets=[Secret.from_name("eightsleep-web")],
 )
+volume = Volume.from_name("eightctl-web-data", create_if_missing=True)
 
 
-basic_http_bearer_dependency = Depends(HTTPBearer())
-
-
-def authorize_token(
-    token: HTTPAuthorizationCredentials = basic_http_bearer_dependency,
-) -> bool:
-    # TODO: rework this to get username/password from env vars and remove this comment. Also - I think we want the dependency to be like a cookie auth thing, not necessarily authorization: bearer. Not sure the right fastapi primitive for this. Figure it out and use it!
-    # Check against PY_EIGHTCTL_EMAIL and PY_EIGHTCTL_PASSWORD env vars!
-
-    
-    if settings.GROUPTHERE_SOLVER_API_KEY is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server API Error!",
-        )
-    if token.credentials != settings.GROUPTHERE_SOLVER_API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect bearer token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return True
-
-
-webapp = fastapi.FastAPI(
-    name="backend",
-    dependencies=[
-        Depends(authorize_token),
-    ],
-)
-
-
-@app.function(image=image, volumes={"/data": volume})
-@modal.concurrent(max_inputs=100)
-@modal.asgi_app()
+@app.function(volumes={"/data": volume})
+@concurrent(max_inputs=100)
+@asgi_app()
 def fastapi_app():
-    from fastapi import FastAPI, Request
-
-    web_app = FastAPI()
-
-    @web_app.post("/echo")
-    async def echo(request: Request):
-        body = await request.json()
-        return body
-
-    return web_app
+    return create_app(commit_hook=volume.commit)
 
 
-@app.function(image=image, volumes={"/data": volume})
-def list_files_in_volume():
-    import os
-    import datetime
+@app.function(volumes={"/data": volume})
+def list_volume_files() -> list[str]:
+    from pathlib import Path
 
-    with open("/data/last_checked.txt", "w") as f:
-        f.write(f"last checked: {datetime.datetime.now()}")
-    files = os.listdir("/data")
-    print("Files in volume:", files)
-    volume.commit()
+    return sorted(path.name for path in Path("/data").iterdir())
 
 
 @app.local_entrypoint()
-def main():
-    list_files_in_volume.remote()
+def main() -> None:
+    print(list_volume_files.remote())

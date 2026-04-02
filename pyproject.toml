@@ -1,11 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eightctl_web"]
+
 [project]
 name = "eightctl-web"
 version = "0.1.0"
-description = "Add your description here"
+description = "Minimal Kindle-friendly Eight Sleep control panel on Modal"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi>=0.135.3",
+    "fastapi>=0.121.0",
+    "jinja2>=3.1.6",
     "modal>=1.4.1",
-    "pydantic-settings>=2.13.1",
+    "pydantic-settings>=2.11.0",
+    "py-eightctl>=0.1.0",
+    "python-multipart>=0.0.20",
 ]
+
+[dependency-groups]
+dev = [
+    "poethepoet>=0.37.0",
+    "pyright>=1.1.408",
+    "pytest>=9.0.2",
+    "ruff>=0.15.9",
+]
+
+[tool.uv.sources]
+py-eightctl = { path = "py-eightctl" }
+
+[tool.poe.tasks]
+typecheck = "pyright"
+lint = "ruff check ."
+format-check = "ruff format --check ."
+format = [
+    { cmd = "ruff check --fix ." },
+    { cmd = "ruff format ." },
+]
+test = "pytest"
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+reportMissingTypeStubs = false
+reportUnusedFunction = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF"]

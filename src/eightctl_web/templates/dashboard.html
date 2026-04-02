@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Eight Sleep Control</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 8px;
+        background: #fff;
+        color: #000;
+        font-family: serif;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      main {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 24px;
+      }
+
+      h2 {
+        margin: 10px 0 6px;
+        font-size: 18px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 8px;
+      }
+
+      th,
+      td {
+        border: 2px solid #000;
+        padding: 4px;
+        text-align: center;
+        vertical-align: middle;
+      }
+
+      th {
+        font-size: 14px;
+      }
+
+      form {
+        margin: 0;
+      }
+
+      button {
+        width: 100%;
+        padding: 8px 6px;
+        border: 2px solid #000;
+        background: #fff;
+        color: #000;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #f0f0f0;
+      }
+
+      button:focus {
+        outline: 2px solid #000;
+        outline-offset: 2px;
+      }
+
+      .filled {
+        background: #000;
+        color: #fff;
+      }
+
+      .filled:hover {
+        background: #222;
+      }
+
+      .small {
+        font-size: 14px;
+        padding: 6px 4px;
+      }
+
+      .value {
+        font-size: 22px;
+        font-weight: bold;
+      }
+
+      .label {
+        text-align: left;
+        font-weight: bold;
+      }
+
+      .error {
+        margin: 0 0 8px;
+        padding: 6px;
+        border: 2px solid #000;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Eight Sleep</h1>
+
+      {% if error %}
+      <div class="error">{{ error }}</div>
+      {% endif %}
+
+      <h2>Bed</h2>
+      <table>
+        <tr>
+          <td>
+            <form method="post" action="/bed/power">
+              <input type="hidden" name="on" value="{{ 'false' if dashboard.bed_is_on else 'true' }}">
+              <button type="submit" class="{% if dashboard.bed_is_on %}filled{% endif %}">
+                Bed {{ 'ON' if dashboard.bed_is_on else 'OFF' }}
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% if dashboard.current_temperature is not none %}
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <th>Now</th>
+                <th>-</th>
+                <th>Temp</th>
+                <th>+</th>
+              </tr>
+              <tr>
+                <td class="label">Current</td>
+                <td>
+                  <form method="post" action="/bed/current-temperature">
+                    <input type="hidden" name="delta" value="-10">
+                    <button type="submit" class="small">-</button>
+                  </form>
+                </td>
+                <td class="value">{{ dashboard.current_temperature }}</td>
+                <td>
+                  <form method="post" action="/bed/current-temperature">
+                    <input type="hidden" name="delta" value="10">
+                    <button type="submit" class="small">+</button>
+                  </form>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+      </table>
+
+      {% if dashboard.stage_temperatures %}
+      <h2>Smart Temps</h2>
+      <table>
+        <tr>
+          <th>Stage</th>
+          <th>-</th>
+          <th>Temp</th>
+          <th>+</th>
+        </tr>
+        {% for stage in dashboard.stage_temperatures %}
+        <tr>
+          <td class="label">{{ stage.label }}</td>
+          <td>
+            <form method="post" action="/bed/stage-temperature">
+              <input type="hidden" name="stage" value="{{ stage.stage }}">
+              <input type="hidden" name="delta" value="-10">
+              <button type="submit" class="small">-</button>
+            </form>
+          </td>
+          <td class="value">{{ stage.value }}</td>
+          <td>
+            <form method="post" action="/bed/stage-temperature">
+              <input type="hidden" name="stage" value="{{ stage.stage }}">
+              <input type="hidden" name="delta" value="10">
+              <button type="submit" class="small">+</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+
+      <h2>Alarms</h2>
+      <table>
+        <tr>
+          <th>Time</th>
+          <th>State</th>
+        </tr>
+        {% for alarm in dashboard.alarms %}
+        <tr>
+          <td class="label">{{ alarm.time }}</td>
+          <td>
+            <form method="post" action="/alarms/toggle">
+              <input type="hidden" name="selector" value="{{ alarm.selector }}">
+              <input type="hidden" name="enabled" value="{{ 'false' if alarm.enabled else 'true' }}">
+              <button type="submit" class="{% if alarm.enabled %}filled{% endif %}">
+                {{ alarm.label }}
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </main>
+  </body>
+</html>
