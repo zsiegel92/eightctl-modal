@@ -6,10 +6,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 image = modal.Image.debian_slim().uv_sync()
 
-app = modal.App('eightctl-web')
+app = modal.App("eightctl-web")
+volume = modal.Volume.from_name(
+    "eightctl-web-data",
+    create_if_missing=True,
+)
 
 
-
+basic_http_bearer_dependency = Depends(HTTPBearer())
 def authorize_token(
     token: HTTPAuthorizationCredentials = basic_http_bearer_dependency,
 ) -> bool:
@@ -27,14 +31,16 @@ def authorize_token(
         )
     return True
 
-basic_http_bearer_dependency = Depends(HTTPBearer())
 
-webapp = FastAPI(
+
+
+webapp = fastapi.FastAPI(
     name="backend",
     dependencies=[
         Depends(authorize_token),
     ],
 )
+
 
 @app.function(image=image)
 @modal.concurrent(max_inputs=100)
@@ -43,7 +49,6 @@ def fastapi_app():
     from fastapi import FastAPI, Request
 
     web_app = FastAPI()
-
 
     @web_app.post("/echo")
     async def echo(request: Request):
