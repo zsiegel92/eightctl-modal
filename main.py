@@ -13,10 +13,10 @@ from eightctl_web.app import create_app
 
 image = (
     Image.debian_slim()
-    .add_local_dir("py-eightctl", remote_path="/.uv/py-eightctl", copy=True)
-    .add_local_dir("src/eightctl_web", remote_path="/root/eightctl_web", copy=True)
-    .uv_sync()
     .env({"PY_EIGHTCTL_CONFIG_PATH": "/data/py-eightctl-config.json"})
+    .add_local_dir("py-eightctl", remote_path="/.uv/py-eightctl", copy=True)
+    .uv_sync()
+    .add_local_dir("src/eightctl_web", remote_path="/root/eightctl_web", copy=True)
 )
 
 app = App(

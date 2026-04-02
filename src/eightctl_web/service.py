@@ -34,6 +34,8 @@ class DashboardController(Protocol):
 
     def set_alarm_enabled(self, *, selector: str, enabled: bool) -> None: ...
 
+    def trigger_vibration_test(self) -> None: ...
+
 
 class EightSleepController:
     def __init__(
@@ -48,7 +50,11 @@ class EightSleepController:
     def load_dashboard(self) -> DashboardView:
         service = self._build_service()
         status = service.get_smart_temperature_status(EmptyRequest())
-        alarms = service.list_alarms(EmptyRequest()).alarms[:5]
+        alarms = [
+            alarm
+            for alarm in service.list_alarms(EmptyRequest()).alarms
+            if not _is_vibration_test_alarm(alarm)
+        ][:5]
         self._commit()
 
         stage_temperatures: tuple[StageTemperatureView, ...] = ()
@@ -112,6 +118,11 @@ class EightSleepController:
         service.set_alarm_enabled(SetAlarmEnabledRequest(selector=selector, enabled=enabled))
         self._commit()
 
+    def trigger_vibration_test(self) -> None:
+        service = self._build_service()
+        service.alarm_vibration_test(EmptyRequest())
+        self._commit()
+
     def _build_service(self) -> EightSleepService:
         return EightSleepService(
             config_path=self._settings.py_eightctl_config_path,
@@ -129,6 +140,12 @@ def _to_alarm_view(alarm: Alarm) -> AlarmView:
         time=alarm.time[:5],
         enabled=alarm.enabled,
         label="ON" if alarm.enabled else "OFF",
+    )
+
+
+def _is_vibration_test_alarm(alarm: Alarm) -> bool:
+    return bool(getattr(alarm, "is_vibration_test", False)) or (
+        getattr(alarm, "vibration_pattern", None) == "TESTDRIVE"
     )
 
 

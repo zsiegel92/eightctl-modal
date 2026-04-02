@@ -177,4 +177,19 @@ def create_app(
             )
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
+    @app.post("/alarms/vibration-test")
+    def vibration_test(
+        request: Request,
+        _: None = Depends(require_login),
+    ):
+        try:
+            dashboard_controller.trigger_vibration_test()
+        except EightSleepError as exc:
+            return render_dashboard(
+                request,
+                error=str(exc),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
     return app
