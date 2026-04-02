@@ -1,0 +1,3 @@
+[submodule "py-eightctl"]
+	path = py-eightctl
+	url = https://github.com/zsiegel92/py-eightctl.git
