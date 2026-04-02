@@ -4,13 +4,16 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 image = (
     modal.Image.debian_slim()
     .uv_sync()
     .env({"CONFIG_PATH_ENV_VAR": "/data/config.json"})
 )
 
-app = modal.App("eightctl-web")
+app = modal.App("eightctl-web", secrets=[
+    modal.Secret.from_name("eightsleep-web"),
+])
 volume = modal.Volume.from_name(
     "eightctl-web-data",
     create_if_missing=True,
