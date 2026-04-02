@@ -56,3 +56,20 @@ def fastapi_app():
         return body
 
     return web_app
+
+
+@app.function(image=image, volumes={"/data": volume})
+def list_files_in_volume():
+    import os
+    import datetime
+
+    with open("/data/last_checked.txt", "w") as f:
+        f.write(f"last checked: {datetime.datetime.now()}")
+    files = os.listdir("/data")
+    print("Files in volume:", files)
+    volume.commit()
+
+
+@app.local_entrypoint()
+def main():
+    list_files_in_volume.remote()
