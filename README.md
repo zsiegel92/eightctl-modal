@@ -1,6 +1,10 @@
-# eightctl-web
+# Self-Deployable Kindle Eightsleep Interface
 
 Minimal FastAPI control panel for an Eight Sleep cover, intended for deployment on Modal and use from a Kindle browser.
+
+## Demo
+
+https://github.com/user-attachments/assets/e0a53fb0-e8d2-4252-a88c-40caa5fa466e
 
 ## Self-deploy
 
