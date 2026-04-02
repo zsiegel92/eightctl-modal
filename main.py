@@ -14,6 +14,8 @@ volume = modal.Volume.from_name(
 
 
 basic_http_bearer_dependency = Depends(HTTPBearer())
+
+
 def authorize_token(
     token: HTTPAuthorizationCredentials = basic_http_bearer_dependency,
 ) -> bool:
@@ -32,8 +34,6 @@ def authorize_token(
     return True
 
 
-
-
 webapp = fastapi.FastAPI(
     name="backend",
     dependencies=[
@@ -42,7 +42,7 @@ webapp = fastapi.FastAPI(
 )
 
 
-@app.function(image=image)
+@app.function(image=image, volumes={"/data": volume})
 @modal.concurrent(max_inputs=100)
 @modal.asgi_app()
 def fastapi_app():
