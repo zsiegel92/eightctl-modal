@@ -13,7 +13,7 @@ app = modal.App('eightctl-web')
 def authorize_token(
     token: HTTPAuthorizationCredentials = basic_http_bearer_dependency,
 ) -> bool:
-    # TODO: rework this to get username/password from env vars and remove this comment
+    # TODO: rework this to get username/password from env vars and remove this comment. Also - I think we want the dependency to be like a cookie auth thing, not necessarily authorization: bearer. Not sure the right fastapi primitive for this. Figure it out and use it!
     if settings.GROUPTHERE_SOLVER_API_KEY is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
