@@ -54,7 +54,7 @@ class EightSleepController:
             alarm
             for alarm in service.list_alarms(EmptyRequest()).alarms
             if not _is_vibration_test_alarm(alarm)
-        ][:5]
+        ]
         self._commit()
 
         stage_temperatures: tuple[StageTemperatureView, ...] = ()
