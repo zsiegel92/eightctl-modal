@@ -151,7 +151,7 @@ class EightSleepController:
 
 def _to_alarm_view(alarm: Alarm) -> AlarmView:
     return AlarmView(
-        selector=alarm.fingerprint,
+        selector=alarm.id,
         time=alarm.time[:5],
         enabled=alarm.enabled,
         label="ON" if alarm.enabled else "OFF",

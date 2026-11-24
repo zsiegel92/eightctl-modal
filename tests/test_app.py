@@ -169,7 +169,7 @@ def test_vibration_test_alarm_is_filtered_from_dashboard() -> None:
                             "FakeAlarm",
                             (),
                             {
-                                "fingerprint": "vibe-fingerprint",
+                                "id": "vibe-id",
                                 "time": "12:34:56",
                                 "enabled": True,
                                 "is_vibration_test": True,
@@ -180,7 +180,7 @@ def test_vibration_test_alarm_is_filtered_from_dashboard() -> None:
                             "FakeAlarm",
                             (),
                             {
-                                "fingerprint": "real-fingerprint",
+                                "id": "real-id",
                                 "time": "06:30:00",
                                 "enabled": True,
                                 "is_vibration_test": False,
@@ -219,6 +219,8 @@ def test_vibration_test_alarm_is_filtered_from_dashboard() -> None:
 
     assert len(dashboard.alarms) == 1
     assert dashboard.alarms[0].time == "06:30"
+    assert dashboard.alarms[0].selector == "real-id"
+    assert dashboard.alarms[0].enabled is True
 
 
 def test_bedtime_uses_scheduled_level_for_display_and_adjustment() -> None:
