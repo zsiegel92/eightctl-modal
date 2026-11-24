@@ -63,7 +63,12 @@ class EightSleepController:
                 StageTemperatureView(
                     stage=SmartTemperatureStage.BEDTIME,
                     label="Bedtime",
-                    value=_format_level(status.smart.bedtime),
+                    value=_format_level(
+                        status.current_schedule.start_settings.bedtime
+                        if status.current_schedule is not None
+                        and status.current_schedule.start_settings.bedtime is not None
+                        else status.smart.bedtime
+                    ),
                 ),
                 StageTemperatureView(
                     stage=SmartTemperatureStage.NIGHT,
@@ -101,6 +106,16 @@ class EightSleepController:
         status = service.get_smart_temperature_status(EmptyRequest())
         if status.smart is None:
             raise EightSleepError("smart temperature settings are unavailable")
+
+        if stage == SmartTemperatureStage.BEDTIME and status.current_schedule is not None:
+            bedtime = status.current_schedule.start_settings.bedtime
+            if bedtime is None:
+                raise EightSleepError("scheduled bedtime temperature is unavailable")
+            service.set_scheduled_bedtime(
+                SetCurrentTemperatureRequest(level=_adjust_level(bedtime, delta))
+            )
+            self._commit()
+            return
 
         current_level = {
             SmartTemperatureStage.BEDTIME: status.smart.bedtime,

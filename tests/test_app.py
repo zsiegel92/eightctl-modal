@@ -200,6 +200,7 @@ def test_vibration_test_alarm_is_filtered_from_dashboard() -> None:
         type = "smart"
 
     class FakeSmartStatus:
+        current_schedule = None
         is_on = True
         current_level = -50
         smart = FakeSmartSettings()
@@ -218,3 +219,42 @@ def test_vibration_test_alarm_is_filtered_from_dashboard() -> None:
 
     assert len(dashboard.alarms) == 1
     assert dashboard.alarms[0].time == "06:30"
+
+
+def test_bedtime_uses_scheduled_level_for_display_and_adjustment() -> None:
+    from py_eightctl.eightsleep import SetCurrentTemperatureRequest
+    from py_eightctl.eightsleep.models import SmartTemperatureStatus
+
+    class FakeService:
+        written: int | None = None
+
+        def get_smart_temperature_status(self, request: EmptyRequest) -> SmartTemperatureStatus:
+            return SmartTemperatureStatus.model_validate(
+                {
+                    "currentLevel": -20,
+                    "currentState": {"type": "smart:bedtime"},
+                    "smart": {
+                        "bedTimeLevel": -37,
+                        "initialSleepLevel": -31,
+                        "finalSleepLevel": -26,
+                    },
+                    "currentSchedule": {"startSettings": {"bedtime": -20}},
+                }
+            )
+
+        def list_alarms(self, request: EmptyRequest) -> Any:
+            return type("AlarmList", (), {"alarms": []})()
+
+        def set_scheduled_bedtime(self, request: SetCurrentTemperatureRequest) -> None:
+            self.written = request.level
+
+    service = FakeService()
+
+    class Controller(EightSleepController):
+        def _build_service(self) -> Any:
+            return service
+
+    controller = Controller(build_settings())
+    assert controller.load_dashboard().stage_temperatures[0].value == "-2"
+    controller.adjust_stage_temperature(stage=SmartTemperatureStage.BEDTIME, delta=10)
+    assert service.written == -10
