@@ -92,7 +92,7 @@ class EightSleepController:
     def adjust_current_temperature(self, *, delta: int) -> None:
         service = self._build_service()
         status = service.get_status(EmptyRequest())
-        next_level = _clamp_level(status.current_level + delta)
+        next_level = _adjust_level(status.current_level, delta)
         service.set_current_temperature(SetCurrentTemperatureRequest(level=next_level))
         self._commit()
 
@@ -109,7 +109,7 @@ class EightSleepController:
         }[stage]
 
         service.set_smart_temperature(
-            SetSmartTemperatureRequest(stage=stage, level=_clamp_level(current_level + delta))
+            SetSmartTemperatureRequest(stage=stage, level=_adjust_level(current_level, delta))
         )
         self._commit()
 
@@ -150,7 +150,16 @@ def _is_vibration_test_alarm(alarm: Alarm) -> bool:
 
 
 def _format_level(value: int) -> str:
-    return str(value // STEP)
+    return str(_display_level(value))
+
+
+def _display_level(value: int) -> int:
+    # Round halfway values away from zero, avoiding a bias toward cooling.
+    return (1 if value >= 0 else -1) * ((abs(value) + STEP // 2) // STEP)
+
+
+def _adjust_level(value: int, delta: int) -> int:
+    return _clamp_level(_display_level(value) * STEP + delta)
 
 
 def _clamp_level(value: int) -> int:
